@@ -46,7 +46,43 @@ var saveTasks = function() {
 };
 
 
+$(".list-group").on("click","p",function() {
+  var text = $(this).text();
+  var textInput = $("<textarea>")
+  .addClass("form-control")
+  .val(text);
+  $(this).replaceWith(textInput);
+  textInput.trigger("focus");
+});
 
+$(".list-group").on("blur","textarea",function() {
+//textarea current text/value
+var text =$(this)
+.val()
+.trim();
+
+//parents ul id attribute
+var status =$(this)
+.closest(".list-group")
+.attr("id")
+.replace("list-","");
+
+//get task position in the list of other li el
+var index =$(this)
+.closest(".list-group-item")
+.index();
+
+tasks[status][index].text = text ;
+saveTasks();
+
+//recreate p el
+var taskP = $("<p>")
+.addClass("m-1")
+.text(text);
+
+//rp textarea w/ p el
+$(this).replaceWith(taskP);
+});
 
 // modal was triggered
 $("#task-form-modal").on("show.bs.modal", function() {
@@ -81,7 +117,57 @@ $("#task-form-modal .btn-primary").click(function() {
     saveTasks();
   }
 });
+//due date clicked
+$(".list-group").on("click","span",function(){
+  //get current text
+  var date = $(this)
+  .text()
+  .trim();
 
+  //create new input el
+  var dateInput = $("<input>")
+  .attr("type","text")
+  .addClass("form-control")
+  .val(date);
+
+  //swap elements
+  $(this).replaceWith(dateInput);
+
+  //automatically focus on new el
+
+  dateInput.trigger("focus");
+});
+
+//value of date was changed
+$(".list-group").on("blur","input[type='text']",function(){
+  //get current text
+  var date = $(this)
+  .val()
+  .trim();
+
+  //get parent ul id attribute
+  var status= $(this)
+  .closest(".list-group")
+  .attr("id")
+  .replace("list-","");
+
+  //tasks position in the list of other li el
+  var index = $(this)
+  .closest(".list-group-item")
+  .index();
+
+  //update task in array and resave to local storage
+  tasks[status][index].date = date;
+  saveTasks();
+
+  //recreate span el w/ bootstrap class
+  var taskSpan = $("<span>")
+  .addClass("badge badge-primary badge-pill")
+  .text(date);
+
+  //rp input w/ span el
+  $(this).replaceWith(taskSpan);
+});
 // remove all tasks
 $("#remove-tasks").on("click", function() {
   for (var key in tasks) {
