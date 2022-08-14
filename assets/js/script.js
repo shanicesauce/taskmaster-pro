@@ -13,6 +13,10 @@ var createTask = function(taskText, taskDate, taskList) {
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
 
+  //check due date
+
+  auditTask(taskLi);
+
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -133,40 +137,52 @@ $(".list-group").on("click","span",function(){
   //swap elements
   $(this).replaceWith(dateInput);
 
-  //automatically focus on new el
+  //enable jquery ui datepicker
+  dateInput.datepicker({
+    minDate: 1,
+    onclose: function(){
+      //when cal is closed force a "change" event on date input
+      $(this).trigger("change");
+    }
+  });
+
+  //automatically bring up calender
 
   dateInput.trigger("focus");
 });
 
 //value of date was changed
-$(".list-group").on("blur","input[type='text']",function(){
-  //get current text
+$(".list-group").on("change", "input[type='text']", function() {
+  // get current text
   var date = $(this)
-  .val()
-  .trim();
+    .val()
+    .trim();
 
-  //get parent ul id attribute
-  var status= $(this)
-  .closest(".list-group")
-  .attr("id")
-  .replace("list-","");
+  // get the parent ul's id attribute
+  var status = $(this)
+    .closest(".list-group")
+    .attr("id")
+    .replace("list-", "");
 
-  //tasks position in the list of other li el
+  // get the task's position in the list of other li elements
   var index = $(this)
-  .closest(".list-group-item")
-  .index();
+    .closest(".list-group-item")
+    .index();
 
-  //update task in array and resave to local storage
+  // update task in array and re-save to localstorage
   tasks[status][index].date = date;
   saveTasks();
 
-  //recreate span el w/ bootstrap class
+  // recreate span element with bootstrap classes
   var taskSpan = $("<span>")
-  .addClass("badge badge-primary badge-pill")
-  .text(date);
+    .addClass("badge badge-primary badge-pill")
+    .text(date);
 
-  //rp input w/ span el
+  // replace input with span element
   $(this).replaceWith(taskSpan);
+
+  //ppass task li el into audit task to check new due date
+  auditTask($(taskSpan).closest(".list-group-item"));
 });
 // remove all tasks
 $("#remove-tasks").on("click", function() {
@@ -212,16 +228,16 @@ $(".card .list-group").sortable({
         text: text,
         date: date
       });
+    });
 
-  });
+    var arrName = $(this)
+    .attr("id")
+    .replace("list-","");
 
-  var arrName = $(this)
-  .attr("id")
-  .replace("list-","");
+    tasks[arrName]= tempArr;
 
-  tasks[arrName]= tempArr;
-  saveTasks();
-    
+    saveTasks();
+   
   },
 });
 
@@ -240,6 +256,32 @@ $("#trash").droppable({
   }
 });
 
+$("#modalDueDate").datepicker({
+  minDate: 1
+});
+
+var auditTask = function(taskEl){
+  //get date from task el
+  var date = $(taskEl).find("span")
+  .text()
+  .trim();
+  
+
+  //convert to moment object at 5pm
+  var time = moment(date,"L").set("hour",17);
+  // remove any old classes from el
+
+  $(taskEl).removeClass("list-group-item-warning list-group-item-danger");
+
+  //apply new class if task is near/over due date
+  if (moment().isAfter(time)){
+    $(taskEl).addClass("list-group-item-danger");
+  }
+  else if (Math.abs(moment().diff(time,"days")) <= 2) {
+    $(taskEl).addClass("list-group-item-warning");
+  }
+
+};
 // load tasks for the first time
 loadTasks();
 
